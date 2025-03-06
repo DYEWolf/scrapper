@@ -19,6 +19,7 @@ export default function Home() {
     new Set(["casa", "departamento", "casa en condominio"])
   );
   const [hasSearched, setHasSearched] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"none" | "asc" | "desc">("none");
 
   const scrapeProperties = async (page: number) => {
     if (selectedTypes.size === 0) {
@@ -74,8 +75,19 @@ export default function Home() {
     // No llamar a scrapeProperties aquí
   };
 
-  const filteredProperties = properties.filter((p) =>
-    selectedTypes.has(p.propertyType)
+  const sortProperties = (props: Property[]) => {
+    if (sortOrder === "none") return [...props].reverse();
+    return [...props].sort((a, b) => {
+      if (sortOrder === "asc") {
+        return a.price - b.price;
+      } else {
+        return b.price - a.price;
+      }
+    });
+  };
+
+  const filteredProperties = sortProperties(
+    properties.filter((p) => selectedTypes.has(p.propertyType))
   );
   const hasProperties = hasSearched && filteredProperties.length > 0;
 
@@ -118,6 +130,19 @@ export default function Home() {
               →
             </button>
           </div>
+
+          <select
+            value={sortOrder}
+            onChange={(e) =>
+              setSortOrder(e.target.value as "none" | "asc" | "desc")
+            }
+            className="ml-4 px-3 py-2 border rounded"
+            disabled={!hasProperties}
+          >
+            <option value="none">Más recientes primero</option>
+            <option value="asc">Precio: menor a mayor</option>
+            <option value="desc">Precio: mayor a menor</option>
+          </select>
         </div>
 
         <div className="flex gap-4">
@@ -138,7 +163,7 @@ export default function Home() {
       {hasSearched ? (
         hasProperties ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...filteredProperties].reverse().map((property, index) => (
+            {filteredProperties.map((property, index) => (
               <div key={index} className="border rounded-lg p-4 shadow">
                 {property.imageUrl && (
                   <img

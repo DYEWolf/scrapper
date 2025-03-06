@@ -3,7 +3,8 @@ import { chromium } from "playwright";
 
 export async function scrapeInmuebles24(
   pageNum: number = 1,
-  selectedTypes: string[] = ["casa", "departamento", "casa en condominio"]
+  selectedTypes: string[] = ["casa", "departamento", "casa en condominio"],
+  selectedZones: string[] = ["zapopan", "guadalajara"]
 ): Promise<ScrapedProperty[]> {
   console.log("Iniciando navegador...");
   const browser = await chromium.launch({
@@ -48,7 +49,9 @@ export async function scrapeInmuebles24(
       .map((type) => typeMapping[type as keyof typeof typeMapping])
       .join("-o-");
 
-    const baseUrl = `https://www.inmuebles24.com/${selectedTypesForUrl}-en-renta-en-zapopan-o-guadalajara`;
+    const zonesForUrl = selectedZones.join("-o-");
+
+    const baseUrl = `https://www.inmuebles24.com/${selectedTypesForUrl}-en-renta-en-${zonesForUrl}`;
     const url =
       pageNum === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${pageNum}.html`;
 

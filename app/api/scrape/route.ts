@@ -7,9 +7,14 @@ export async function POST(request: Request) {
     const {
       page = 1,
       selectedTypes = ["casa", "departamento", "casa en condominio"],
+      selectedZones = ["zapopan", "guadalajara"],
     } = await request.json();
 
-    const properties = await scrapeInmuebles24(page, selectedTypes);
+    const properties = await scrapeInmuebles24(
+      page,
+      selectedTypes,
+      selectedZones
+    );
     console.log(
       `Encontradas ${properties.length} propiedades en página ${page}`
     );
@@ -19,7 +24,11 @@ export async function POST(request: Request) {
       await saveProperties(properties);
     }
 
-    return NextResponse.json({ success: true, count: properties.length });
+    return NextResponse.json({
+      success: true,
+      count: properties.length,
+      properties: properties,
+    });
   } catch (error) {
     console.error("Error in scrape route:", error);
     return NextResponse.json(

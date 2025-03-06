@@ -18,12 +18,20 @@ export default function Home() {
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
     new Set(["casa", "departamento", "casa en condominio"])
   );
+  const [selectedZones, setSelectedZones] = useState<Set<string>>(
+    new Set(["zapopan", "guadalajara"])
+  );
   const [hasSearched, setHasSearched] = useState(false);
   const [sortOrder, setSortOrder] = useState<"none" | "asc" | "desc">("none");
 
   const scrapeProperties = async (page: number) => {
     if (selectedTypes.size === 0) {
       alert("Por favor selecciona al menos un tipo de propiedad");
+      return;
+    }
+
+    if (selectedZones.size === 0) {
+      alert("Por favor selecciona al menos una zona");
       return;
     }
 
@@ -37,6 +45,7 @@ export default function Home() {
         body: JSON.stringify({
           page,
           selectedTypes: Array.from(selectedTypes),
+          selectedZones: Array.from(selectedZones),
         }),
       });
 
@@ -44,18 +53,14 @@ export default function Home() {
         throw new Error("Error al obtener propiedades");
       }
 
-      // Esperar a que las propiedades se guarden
-      await response.json();
+      const result = await response.json();
 
-      // Obtener las propiedades actualizadas
-      const propertiesResponse = await fetch("/api/properties");
-      if (!propertiesResponse.ok) {
-        throw new Error("Error al obtener propiedades guardadas");
+      if (result.properties) {
+        setProperties(result.properties);
+        setHasSearched(true);
+      } else {
+        throw new Error("No se recibieron propiedades del servidor");
       }
-
-      const newProperties = await propertiesResponse.json();
-      setProperties(newProperties);
-      setHasSearched(true);
     } catch (error) {
       console.error("Error:", error);
       alert("Error al obtener propiedades. Por favor intenta de nuevo.");
@@ -73,6 +78,24 @@ export default function Home() {
     }
     setSelectedTypes(newTypes);
     // No llamar a scrapeProperties aquí
+  };
+
+  const zones = [
+    { id: "zapopan", name: "Zapopan" },
+    { id: "guadalajara", name: "Guadalajara" },
+    { id: "san-pedro-tlaquepaque", name: "Tlaquepaque" },
+    { id: "tonala", name: "Tonalá" },
+    { id: "tlajomulco-de-zuniga", name: "Tlajomulco" },
+  ];
+
+  const handleZoneToggle = (zoneId: string) => {
+    const newZones = new Set(selectedZones);
+    if (newZones.has(zoneId)) {
+      newZones.delete(zoneId);
+    } else {
+      newZones.add(zoneId);
+    }
+    setSelectedZones(newZones);
   };
 
   const sortProperties = (props: Property[]) => {
@@ -97,7 +120,9 @@ export default function Home() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => scrapeProperties(currentPage)}
-            disabled={loading || selectedTypes.size === 0}
+            disabled={
+              loading || selectedTypes.size === 0 || selectedZones.size === 0
+            }
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
           >
             {loading ? "Buscando..." : "Buscar Propiedades"}
@@ -145,18 +170,34 @@ export default function Home() {
           </select>
         </div>
 
-        <div className="flex gap-4">
-          {["casa", "departamento", "casa en condominio"].map((type) => (
-            <label key={type} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selectedTypes.has(type)}
-                onChange={() => handleTypeToggle(type)}
-                className="form-checkbox h-5 w-5 text-blue-500"
-              />
-              <span className="capitalize">{type}</span>
-            </label>
-          ))}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex gap-4">
+            {["casa", "departamento", "casa en condominio"].map((type) => (
+              <label key={type} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedTypes.has(type)}
+                  onChange={() => handleTypeToggle(type)}
+                  className="form-checkbox h-5 w-5 text-blue-500"
+                />
+                <span className="capitalize">{type}</span>
+              </label>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            {zones.map((zone) => (
+              <label key={zone.id} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedZones.has(zone.id)}
+                  onChange={() => handleZoneToggle(zone.id)}
+                  className="form-checkbox h-5 w-5 text-blue-500"
+                />
+                <span>{zone.name}</span>
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 

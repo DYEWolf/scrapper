@@ -43,12 +43,21 @@ export default function Home() {
         throw new Error("Error al obtener propiedades");
       }
 
+      // Esperar a que las propiedades se guarden
+      await response.json();
+
+      // Obtener las propiedades actualizadas
       const propertiesResponse = await fetch("/api/properties");
+      if (!propertiesResponse.ok) {
+        throw new Error("Error al obtener propiedades guardadas");
+      }
+
       const newProperties = await propertiesResponse.json();
       setProperties(newProperties);
       setHasSearched(true);
     } catch (error) {
       console.error("Error:", error);
+      alert("Error al obtener propiedades. Por favor intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -85,8 +94,9 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                setCurrentPage((prev) => Math.max(1, prev - 1));
-                scrapeProperties(currentPage - 1);
+                const newPage = Math.max(1, currentPage - 1);
+                setCurrentPage(newPage);
+                scrapeProperties(newPage);
               }}
               disabled={loading || currentPage === 1 || !hasProperties}
               className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 disabled:bg-gray-100"
@@ -98,8 +108,9 @@ export default function Home() {
 
             <button
               onClick={() => {
-                setCurrentPage((prev) => prev + 1);
-                scrapeProperties(currentPage + 1);
+                const newPage = currentPage + 1;
+                setCurrentPage(newPage);
+                scrapeProperties(newPage);
               }}
               disabled={loading || !hasProperties}
               className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 disabled:bg-gray-100"
@@ -127,7 +138,7 @@ export default function Home() {
       {hasSearched ? (
         hasProperties ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProperties.map((property, index) => (
+            {[...filteredProperties].reverse().map((property, index) => (
               <div key={index} className="border rounded-lg p-4 shadow">
                 {property.imageUrl && (
                   <img
